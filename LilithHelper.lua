@@ -4,6 +4,7 @@ _addon.version = '2.0'
 _addon.commands = {'lilithhelper', 'lh'}
 
 local bot = require('bot/bot')
+local ipc = require('bot/ipc')
 local state = require('bot/state')
 local logger = require('bot/logger')
 local keyitems = require('bot/keyitems')
@@ -64,6 +65,36 @@ end)
 
 
 --------------------------------------------------
+-- IPC
+--------------------------------------------------
+
+windower.register_event('ipc message', function(message)
+
+    local action, delay = ipc.handle_message(message)
+
+    if action == 'start' then
+
+        coroutine.schedule(function()
+
+            coroutine.sleep(delay)
+
+            bot.start()
+
+        end, 0.1)
+
+    elseif action == 'stop' then
+
+        bot.stop()
+
+    elseif action == 'status' then
+
+        bot.status()
+
+    end
+end)
+
+
+--------------------------------------------------
 -- COMMANDS
 --------------------------------------------------
 
@@ -72,6 +103,34 @@ windower.register_event('addon command', function(command, ...)
     command = command and command:lower() or ''
 
     local args = {...}
+
+    --------------------------------------------------
+    -- MULTIBOX COMMANDS
+    --------------------------------------------------
+
+    if command == '@all' then
+
+        local subcommand = args[1] and args[1]:lower() or ''
+
+        if subcommand == 'start' then
+            ipc.start_all()
+
+        elseif subcommand == 'stop' then
+            ipc.stop_all()
+
+        elseif subcommand == 'status' then
+            ipc.status_all()
+
+        else
+            logger.info('Usage: //lh @all <start|stop|status>')
+        end
+
+        return
+    end
+
+    --------------------------------------------------
+    -- LOCAL COMMANDS
+    --------------------------------------------------
 
     if command == 'start' then
 
@@ -108,7 +167,7 @@ windower.register_event('addon command', function(command, ...)
 
     else
 
-        logger.info('Commands: start | stop | status | debug | difficulty <VE|E|N|D|VD>')
+        logger.info('Commands: start | stop | status | @all <start|stop|status> | debug | difficulty <VE|E|N|D|VD>')
 
     end
 end)

@@ -6,6 +6,7 @@ local travel = require('bot/travel')
 local movement = require('bot/movement')
 local interaction = require('bot/interaction')
 local entities = require('bot/entities')
+local party = require('bot/party')
 
 local bot = {}
 
@@ -238,6 +239,12 @@ function bot.run()
             state.phase = 'acquire_key_item'
 
             logger.debug("Maiden's phantom gem not found.")
+
+            if not keyitems.has_enough_merits(10) then
+                logger.error("At least 10 merit points are required to purchase Maiden's phantom gem.")
+                bot.stop()
+                return
+            end
 
             if not acquire_key_item() then
                 return

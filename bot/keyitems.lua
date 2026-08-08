@@ -33,4 +33,28 @@ function keyitems.has_named(name)
 end
 
 
+function keyitems.get_merits()
+
+    local player = windower.ffxi.get_player()
+
+    if not player then
+        return nil
+    end
+
+    return player.merits
+end
+
+
+function keyitems.has_enough_merits(amount)
+
+    local merits = keyitems.get_merits()
+
+    if not merits then
+        return false
+    end
+
+    return merits >= amount
+end
+
+
 return keyitems

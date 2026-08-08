@@ -5,6 +5,7 @@ local keyitems = require('bot/keyitems')
 local travel = require('bot/travel')
 local movement = require('bot/movement')
 local interaction = require('bot/interaction')
+local entities = require('bot/entities')
 
 local bot = {}
 
@@ -259,11 +260,46 @@ function bot.run()
             state.phase = 'selbina'
 
             logger.debug("Maiden's phantom gem found.")
-            logger.info('Ready to begin Selbina routine.')
+            logger.debug('Selbina zone confirmed.')
 
-            -- Next stage:
-            -- Move from Home Point #1 through
-            -- the Selbina waypoints to the HTMB.
+            local hp = interaction.wait_for_homepoint(selbina, 1)
+
+            if not hp or not state.running then
+                return
+            end
+
+            state.phase = 'move_to_htmb'
+
+            logger.info('Moving to Veridical Conflux.')
+
+            local started = movement.walk_to_coordinates(selbina.routes.hp_to_htmb)
+
+            if not started then
+                logger.error('Failed to start movement to Veridical Conflux.')
+                return
+            end
+
+            if not wait_for_movement() then
+                return
+            end
+
+            state.phase = 'wait_for_conflux'
+
+            logger.debug('Waiting for Veridical Conflux to load.')
+
+            local conflux = entities.wait_for_mob_by_name('Veridical Conflux', false)
+
+            if not conflux or not state.running then
+                return
+            end
+
+            state.phase = 'at_conflux'
+
+            logger.info('Arrived at Veridical Conflux.')
+
+            -- Next:
+            -- interact with Veridical Conflux
+            -- enter HTMB
 
             return
 

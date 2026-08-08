@@ -4,86 +4,93 @@ local logger = require('bot/logger')
 local movement = {}
 
 
--- Returns the player's current X and Y coordinates.
-function movement.get_position()
-    local player = windower.ffxi.get_mob_by_target('me')
+function movement.walk_to_coordinates(waypoint_list)
 
-    if not player then
-        return nil, nil
-    end
-
-    return player.x, player.y
-end
-
-
--- Returns the distance between the player and a coordinate.
-function movement.distance_to(destination)
-    local x, y = movement.get_position()
-
-    if not x or not y then
-        return nil
-    end
-
-    local dx = destination[1] - x
-    local dy = destination[2] - y
-
-    return math.sqrt(dx * dx + dy * dy)
-end
-
-
--- Begin moving toward a coordinate.
-function movement.move_to(destination)
-
-    if not destination then
-        logger.error('Invalid movement destination.')
+    if not waypoint_list or #waypoint_list == 0 then
+        logger.error('No waypoints provided.')
         return false
     end
 
-    local x = destination[1]
-    local y = destination[2]
-
-    if not x or not y then
-        logger.error('Movement destination is missing coordinates.')
+    if state.movement_active then
+        logger.warn('Movement is already active.')
         return false
     end
 
     state.movement_active = true
 
-    logger.debug(
-        'Moving to ('..
-        string.format('%.3f', x)..', '..
-        string.format('%.3f', y)..').'
-    )
+    coroutine.schedule(function()
 
-    windower.ffxi.run(x, y)
+        for i = 1, #waypoint_list do
+
+            if not state.movement_active or not state.running then
+                break
+            end
+
+            local target_x = waypoint_list[i][1]
+            local target_y = waypoint_list[i][2]
+
+            logger.debug(
+                string.format(
+                    'Moving to waypoint %d/%d...',
+                    i,
+                    #waypoint_list
+                )
+            )
+
+            while state.movement_active and state.running do
+
+                local player_mob =
+                    windower.ffxi.get_mob_by_target('me')
+
+                if not player_mob then
+                    logger.error('Unable to get player position.')
+                    break
+                end
+
+                local angle = math.atan2(
+                    target_y - player_mob.y,
+                    target_x - player_mob.x
+                )
+
+                windower.ffxi.run(-angle)
+
+                local distance = math.sqrt(
+                    (player_mob.x - target_x)^2 +
+                    (player_mob.y - target_y)^2
+                )
+
+                if distance < 1.0 then
+                    break
+                end
+
+                coroutine.sleep(0.1)
+            end
+        end
+
+
+        windower.ffxi.run(false)
+
+        state.movement_active = false
+
+        if state.running then
+            logger.info('Final destination reached successfully.')
+        else
+            logger.debug('Movement cancelled.')
+        end
+
+    end, 0.1)
 
     return true
 end
 
 
--- Stop player movement.
 function movement.stop()
-
-    windower.ffxi.run(false)
 
     state.movement_active = false
 
+    windower.ffxi.run(false)
+
     logger.debug('Movement stopped.')
-end
-
-
--- Check whether the player is within a specified distance of a destination.
-function movement.has_arrived(destination, tolerance)
-
-    tolerance = tolerance or 1.5
-
-    local distance = movement.distance_to(destination)
-
-    if not distance then
-        return false
-    end
-
-    return distance <= tolerance
 end
 
 

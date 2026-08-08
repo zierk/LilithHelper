@@ -2,13 +2,18 @@ local state = require('bot/state')
 
 local logger = {}
 
-local function write(label, label_color, msg)
-    local prefix = '\31\200[\31\05'.._addon.name..'\31\200]'
 
-    if label then
-        prefix = prefix..' \31'..label_color..label..':\31\207 '
-    else
-        prefix = prefix..'\31\207 '
+local function write(label, msg)
+    local prefix = '\31\200[\31\05'.._addon.name..'\31\200]\31\207 '
+
+    if label == 'DEBUG' then
+        prefix = prefix..'\31\200DEBUG:\31\207 '
+
+    elseif label == 'WARNING' then
+        prefix = prefix..'\31\57WARNING:\31\207 '
+
+    elseif label == 'ERROR' then
+        prefix = prefix..'\31\123ERROR:\31\207 '
     end
 
     windower.add_to_chat(1, prefix..tostring(msg))
@@ -16,7 +21,7 @@ end
 
 
 function logger.info(msg)
-    write(nil, nil, msg)
+    write(nil, msg)
 end
 
 
@@ -25,17 +30,17 @@ function logger.debug(msg)
         return
     end
 
-    write('DEBUG', 200, msg)
+    write('DEBUG', msg)
 end
 
 
 function logger.warn(msg)
-    write('WARNING', 057, msg)
+    write('WARNING', msg)
 end
 
 
 function logger.error(msg)
-    write('ERROR', 123, msg)
+    write('ERROR', msg)
 end
 
 

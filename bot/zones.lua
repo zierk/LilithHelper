@@ -12,8 +12,8 @@ zones.northern_sandoria = {
     },
 
     locations = {
-        homepoint = {26.998, 84.518},
-        ki_npc = {9.917, 96.034},
+        hp2 = {9.917, 96.034},
+        ki_npc = {26.998, 84.518},
     },
 }
 

@@ -7,6 +7,7 @@ local movement = require('bot/movement')
 local interaction = require('bot/interaction')
 local entities = require('bot/entities')
 local party = require('bot/party')
+local settings = require('bot/settings')
 
 local bot = {}
 
@@ -44,7 +45,7 @@ local function wait_for_movement()
             bot.stop()
             return
         end
-        
+
         if not state.running then
             return false
         end
@@ -543,8 +544,9 @@ end
 --------------------------------------------------
 
 function bot.status()
-
-    logger.info('Running: '..tostring(state.running)..' | Phase: '..tostring(state.phase)..' | Moving: '..tostring(state.movement_active))
+    logger.info('Running: '..tostring(state.running))
+    logger.info('Phase: '..tostring(state.phase))
+    logger.info('Difficulty: '..settings.get_difficulty())
 end
 
 

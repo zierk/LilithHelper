@@ -3,13 +3,12 @@ _addon.author = 'Zierk'
 _addon.version = '2.0'
 _addon.commands = {'lilithhelper', 'lh'}
 
-
 local bot = require('bot/bot')
 local state = require('bot/state')
 local logger = require('bot/logger')
 local keyitems = require('bot/keyitems')
 local zones = require('bot/zones')
-local bot = require('bot/bot')
+local settings = require('bot/settings')
 
 
 --------------------------------------------------
@@ -42,7 +41,9 @@ windower.register_event('zone change', function(new_id, old_id)
 
         if new_id == zones.selbina.zone_id then
             state.phase = 'post_htmb'
+
             logger.info('Returned to Selbina from HTMB. Resuming bot.')
+
             bot.run()
             return
         end
@@ -70,18 +71,44 @@ windower.register_event('addon command', function(command, ...)
 
     command = command and command:lower() or ''
 
+    local args = {...}
+
     if command == 'start' then
+
         bot.start()
 
     elseif command == 'stop' then
+
         bot.stop()
 
     elseif command == 'status' then
+
         bot.status()
 
     elseif command == 'debug' then
+
         bot.toggle_debug()
 
-    end
+    elseif command == 'difficulty' then
 
+        local difficulty = args[1]
+
+        if not difficulty then
+            logger.info('Current difficulty: '..settings.get_difficulty())
+            logger.info('Usage: //lh difficulty <VE|E|N|D|VD>')
+            return
+        end
+
+        if not settings.set_difficulty(difficulty) then
+            logger.error('Invalid difficulty. Use VE, E, N, D, or VD.')
+            return
+        end
+
+        logger.info('HTMB difficulty set to '..settings.get_difficulty()..'.')
+
+    else
+
+        logger.info('Commands: start | stop | status | debug | difficulty <VE|E|N|D|VD>')
+
+    end
 end)

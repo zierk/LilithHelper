@@ -47,6 +47,12 @@ function movement.walk_to_coordinates(waypoint_list)
                     break
                 end
 
+                if not player_mob.hpp or player_mob.hpp <= 0 then
+                    logger.error('Player is dead. Stopping movement.')
+                    state.running = false
+                    break
+                end
+
                 local angle = math.atan2(
                     target_y - player_mob.y,
                     target_x - player_mob.x

@@ -12,12 +12,39 @@ local bot = {}
 
 
 --------------------------------------------------
+-- PLAYER ALIVE CHECK
+--------------------------------------------------
+
+local function is_player_alive()
+
+    local player = windower.ffxi.get_mob_by_target('me')
+
+    if not player then
+        return false
+    end
+
+    return player.hpp and player.hpp > 0
+end
+
+
+--------------------------------------------------
 -- WAIT FOR MOVEMENT
 --------------------------------------------------
 
 local function wait_for_movement()
 
     while state.movement_active do
+        --------------------------------------------------
+        -- PLAYER DEAD
+        --------------------------------------------------
+
+        if not is_player_alive() then
+            state.phase = 'dead'
+            logger.error('Player is dead. Bot stopped.')
+            bot.stop()
+            return
+        end
+        
         if not state.running then
             return false
         end
@@ -229,6 +256,17 @@ function bot.run()
     local selbina = zones.selbina
 
     while state.running do
+
+        --------------------------------------------------
+        -- PLAYER DEAD CHECK
+        --------------------------------------------------
+
+        if not is_player_alive() then
+            state.phase = 'dead'
+            logger.error('Player is dead. Bot stopped.')
+            bot.stop()
+            return
+        end
 
         --------------------------------------------------
         -- NO KI

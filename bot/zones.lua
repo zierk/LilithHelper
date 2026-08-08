@@ -28,6 +28,17 @@ zones.selbina = {
         },
     },
 
+    entities = {
+        veridical_conflux = {
+            name = 'Veridical Conflux',
+            index = 126,
+        },
+    },
+
+    locations = {
+        conflux_entry = {12.360, 69.852},
+    },
+
     routes = {
         hp_to_htmb = {
             {24.845, 34.893},

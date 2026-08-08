@@ -262,6 +262,42 @@ function bot.run()
             logger.debug("Maiden's phantom gem found.")
             logger.debug('Selbina zone confirmed.')
 
+            local conflux = windower.ffxi.get_mob_by_index(selbina.entities.veridical_conflux.index)
+            local conflux_distance = conflux and math.sqrt(conflux.distance) or nil
+
+            --------------------------------------------------
+            -- STARTED NEAR VERIDICAL CONFLUX
+            --------------------------------------------------
+
+            if conflux and conflux_distance <= 20 then
+
+                logger.debug('Already near Veridical Conflux | Distance: '..string.format('%.2f', conflux_distance))
+
+                state.phase = 'move_to_conflux_entry'
+
+                logger.info('Moving to Veridical Conflux entry position.')
+
+                if not move_to(selbina.locations.conflux_entry) then
+                    logger.error('Failed to move to Veridical Conflux entry position.')
+                    return
+                end
+
+                state.phase = 'at_conflux'
+
+                logger.info('Ready to enter HTMB.')
+
+                -- Next:
+                -- interact with Veridical Conflux
+                -- enter HTMB
+
+                return
+            end
+
+            --------------------------------------------------
+            -- STARTED AWAY FROM CONFLUX
+            -- USE HOME POINT #1 ROUTE
+            --------------------------------------------------
+
             local hp = interaction.wait_for_homepoint(selbina, 1)
 
             if not hp or not state.running then

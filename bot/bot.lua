@@ -54,11 +54,17 @@ local function get_to_northern_sandy_hp()
     local hp_number = 2
     local hp_index = sandy.homepoints[hp_number].index
 
-    local nearby_hp, distance = travel.find_nearby_homepoint(50)
+    local nearby_hp, distance = travel.find_nearby_homepoint(5)
 
     if nearby_hp and travel.is_in_zone(sandy.zone_id) and nearby_hp.index == hp_index then
         logger.debug('Already at '..sandy.name..' Home Point #2 | Distance: '..string.format('%.2f', distance))
         return nearby_hp
+    end
+
+    if not nearby_hp then
+        logger.error('No Home Point in range. Move within 5 yalms of a Home Point and start the bot again.')
+        bot.stop()
+        return nil
     end
 
     state.phase = 'travel_northern_sandoria'
@@ -346,15 +352,23 @@ function bot.run()
 
         else
 
+            local hp, distance = travel.find_nearby_homepoint(5)
+
+            if not hp then
+                logger.error('No Home Point in range. Move within 5 yalms of a Home Point and start the bot again.')
+                bot.stop()
+                return
+            end
+
             state.phase = 'travel_selbina'
 
             logger.info("Maiden's phantom gem already owned. Traveling to Selbina.")
 
             travel.warp_homepoint(selbina.name, 1)
 
-            local hp = interaction.wait_for_homepoint(selbina, 1)
+            local destination_hp = interaction.wait_for_homepoint(selbina, 1)
 
-            if not hp then
+            if not destination_hp then
                 return
             end
         end

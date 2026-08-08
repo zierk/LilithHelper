@@ -225,4 +225,55 @@ function interaction.warp_northern_sandy_to_selbina()
 end
 
 
+--------------------------------------------------
+-- ENTER HTMB
+--------------------------------------------------
+
+function interaction.enter_htmb(difficulty)
+
+    local conflux = entities.wait_for_mob_by_name('Veridical Conflux', false)
+
+    if not conflux then
+        logger.error('Unable to find Veridical Conflux.')
+        return false
+    end
+
+    local menu_id = interaction.start_dialog(conflux)
+
+    if not menu_id then
+        logger.error('Unable to open Veridical Conflux menu.')
+        return false
+    end
+
+    if difficulty == 'VE' then
+        interaction.send_dialog_packet(conflux, menu_id, 16388, true, 1)
+        interaction.send_dialog_packet(conflux, menu_id, 16388, false, 1)
+
+    elseif difficulty == 'E' then
+        interaction.send_dialog_packet(conflux, menu_id, 4, true, 1)
+        interaction.send_dialog_packet(conflux, menu_id, 4, false, 1)
+
+    elseif difficulty == 'N' then
+        interaction.send_dialog_packet(conflux, menu_id, 49156, true)
+        interaction.send_dialog_packet(conflux, menu_id, 49156, false)
+
+    elseif difficulty == 'D' then
+        interaction.send_dialog_packet(conflux, menu_id, 32772, true)
+        interaction.send_dialog_packet(conflux, menu_id, 32772, false)
+
+    elseif difficulty == 'VD' then
+        interaction.send_dialog_packet(conflux, menu_id, 16388, true)
+        interaction.send_dialog_packet(conflux, menu_id, 16388, false)
+
+    else
+        logger.error('Invalid HTMB difficulty: '..tostring(difficulty))
+        return false
+    end
+
+    logger.info('HTMB entry request sent.')
+
+    return true
+end
+
+
 return interaction

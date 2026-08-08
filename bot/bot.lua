@@ -248,6 +248,32 @@ end
 
 
 --------------------------------------------------
+-- ENTER HTMB
+--------------------------------------------------
+
+local function enter_htmb()
+
+    state.phase = 'at_conflux'
+
+    local difficulty = settings.get_difficulty()
+
+    logger.info('Entering HTMB on difficulty '..difficulty..'.')
+
+    if not interaction.enter_htmb(difficulty) then
+        logger.error('Failed to initiate HTMB entry.')
+        bot.stop()
+        return false
+    end
+
+    state.phase = 'fighting_boss'
+
+    logger.info('HTMB entry initiated. Waiting for fight to complete.')
+
+    return true
+end
+
+
+--------------------------------------------------
 -- MAIN BOT LOOP
 --------------------------------------------------
 
@@ -369,16 +395,13 @@ function bot.run()
             logger.debug('Selbina zone confirmed.')
 
             --------------------------------------------------
-            -- PARTY MEMBER - WAIT AT HOME POINT OR IDLE IN ZONE
+            -- PARTY MEMBER - IDLE IN SELBINA
             --------------------------------------------------
 
             if not party.can_initiate_htmb() then
-
-                if hp and hp.index == selbina.homepoints[1].index then
-                    state.phase = 'waiting_for_party_leader'
-                    logger.info('Party member detected. Waiting in Selbina for the party leader.')
-                    return
-                end
+                state.phase = 'waiting_for_party_leader'
+                logger.info('Party member detected. Waiting in Selbina for the party leader.')
+                return
             end
 
             --------------------------------------------------
@@ -407,11 +430,19 @@ function bot.run()
 
                 state.phase = 'at_conflux'
 
-                logger.info('Ready to enter HTMB.')
+                logger.info('Ready at Veridical Conflux.')
 
-                -- Next:
-                -- interact with Veridical Conflux
-                -- enter HTMB
+                if not party.wait_for_all_members_in_zone(selbina.zone_id) then
+                    return
+                end
+
+                state.phase = 'at_conflux'
+
+                logger.info('Party ready. Ready to enter HTMB.')
+
+                if not enter_htmb() then
+                    return
+                end
 
                 return
             end
@@ -456,12 +487,19 @@ function bot.run()
 
             logger.info('Arrived at Veridical Conflux.')
 
-            -- Next:
-            -- interact with Veridical Conflux
-            -- enter HTMB
+            if not party.wait_for_all_members_in_zone(selbina.zone_id) then
+                return
+            end
+
+            state.phase = 'at_conflux'
+
+            logger.info('Party ready. Ready to enter HTMB.')
+
+            if not enter_htmb() then
+                return
+            end
 
             return
-
 
         --------------------------------------------------
         -- HAVE KI SOMEWHERE ELSE

@@ -275,6 +275,23 @@ function bot.run()
             logger.debug("Maiden's phantom gem found.")
             logger.debug('Selbina zone confirmed.')
 
+            --------------------------------------------------
+            -- PARTY MEMBER - WAIT AT HOME POINT OR IDLE IN ZONE
+            --------------------------------------------------
+
+            if not party.can_initiate_htmb() then
+
+                if hp and hp.index == selbina.homepoints[1].index then
+                    state.phase = 'waiting_for_party_leader'
+                    logger.info('Party member detected. Waiting in Selbina for the party leader.')
+                    return
+                end
+            end
+
+            --------------------------------------------------
+            -- SOLO / PARTY LEADER CONTINUES
+            --------------------------------------------------
+
             local conflux = windower.ffxi.get_mob_by_index(selbina.entities.veridical_conflux.index)
             local conflux_distance = conflux and math.sqrt(conflux.distance) or nil
 

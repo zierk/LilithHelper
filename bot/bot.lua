@@ -236,15 +236,69 @@ function bot.run()
 
         if not keyitems.has_named('maidens_phantom_gem') then
 
-            state.phase = 'acquire_key_item'
-
             logger.debug("Maiden's phantom gem not found.")
 
+            --------------------------------------------------
+            -- POST HTMB - RETURN CONFLUX -> HOME POINT
+            --------------------------------------------------
+
+            if travel.is_in_zone(selbina.zone_id) then
+
+                state.phase = 'wait_for_conflux'
+
+                logger.debug('Waiting for Veridical Conflux to load.')
+
+                local conflux = entities.wait_for_mob_by_name('Veridical Conflux', false)
+
+                if not conflux or not state.running then
+                    return
+                end
+
+                if conflux.index ~= selbina.entities.veridical_conflux.index then
+                    logger.error('Unexpected Veridical Conflux index. Expected '..selbina.entities.veridical_conflux.index..', found '..conflux.index..'.')
+                    bot.stop()
+                    return
+                end
+
+                state.phase = 'return_to_selbina_hp'
+
+                logger.info('Returning to Selbina Home Point #1.')
+
+                local started = movement.walk_to_coordinates(selbina.routes.htmb_to_hp)
+
+                if not started then
+                    logger.error('Failed to start return route to Selbina Home Point #1.')
+                    return
+                end
+
+                if not wait_for_movement() then
+                    return
+                end
+
+                local hp = interaction.wait_for_homepoint(selbina, 1)
+
+                if not hp or not state.running then
+                    return
+                end
+
+                logger.info('Returned to Selbina Home Point #1.')
+            end
+
+            --------------------------------------------------
+            -- CHECK MERITS
+            --------------------------------------------------
+
             if not keyitems.has_enough_merits(10) then
-                logger.error("At least 10 merit points are required to purchase Maiden's phantom gem.")
+                logger.info('Fewer than 10 merit points remaining. Farming complete.')
                 bot.stop()
                 return
             end
+
+            --------------------------------------------------
+            -- GET NEXT KI
+            --------------------------------------------------
+
+            state.phase = 'acquire_key_item'
 
             if not acquire_key_item() then
                 return

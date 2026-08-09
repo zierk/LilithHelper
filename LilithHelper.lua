@@ -23,24 +23,54 @@ windower.register_event('zone change', function(new_id, old_id)
     end
 
     --------------------------------------------------
-    -- ENTERING LILITH BATTLEFIELD
+    -- POSSIBLE HTMB ENTRY FROM SELBINA
     --------------------------------------------------
 
-    if new_id == zones.lilith_battlefield.zone_id then
+    if old_id == zones.selbina.zone_id then
 
-        state.phase = 'fighting_boss'
+        coroutine.schedule(function()
 
-        logger.info('Entered Lilith battlefield. Bot waiting for fight to finish.')
+            -- Give the battlefield time to finish loading.
+            coroutine.sleep(2)
+
+            if not state.running then
+                return
+            end
+
+            local timeout = os.clock() + 10
+
+            while state.running and os.clock() < timeout do
+
+                local lilith = windower.ffxi.get_mob_by_name('Lady Lilith')
+
+                if lilith then
+
+                    state.phase = 'fighting_boss'
+
+                    logger.info('Lady Lilith detected. Bot waiting for fight to finish.')
+
+                    return
+                end
+
+                coroutine.sleep(0.5)
+            end
+
+            --------------------------------------------------
+            -- NOT A LILITH BATTLEFIELD
+            --------------------------------------------------
+
+            logger.debug('Lady Lilith was not detected after leaving Selbina.')
+
+        end, 0.1)
 
         return
     end
 
     --------------------------------------------------
-    -- IGNORE ALL OTHER ZONE CHANGES UNLESS
-    -- WE ARE ACTUALLY LEAVING THE BATTLEFIELD
+    -- ONLY HANDLE FIGHT EXIT IF WE WERE FIGHTING
     --------------------------------------------------
 
-    if old_id ~= zones.lilith_battlefield.zone_id then
+    if state.phase ~= 'fighting_boss' then
         return
     end
 
@@ -50,7 +80,7 @@ windower.register_event('zone change', function(new_id, old_id)
 
     coroutine.schedule(function()
 
-        -- Allow zoning and KI state to fully update.
+        -- Allow zone and KI state to finish updating.
         coroutine.sleep(2)
 
         if not state.running then

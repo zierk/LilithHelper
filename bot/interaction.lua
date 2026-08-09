@@ -445,6 +445,8 @@ function interaction.enter_htmb(difficulty)
 
     logger.info('HTMB entry request sent.')
 
+    windower.send_command('wait 1;setkey enter;wait .5;setkey enter up;')
+
     return true
 end
 

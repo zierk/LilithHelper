@@ -287,7 +287,7 @@ local function enter_htmb()
         return false
     end
 
-    state.phase = 'fighting_boss'
+    state.phase = 'waiting_for_battlefield'
 
     logger.info('HTMB entry initiated. Waiting for fight to complete.')
 

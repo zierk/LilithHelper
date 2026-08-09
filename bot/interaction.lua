@@ -78,36 +78,26 @@ end
 -- SEND NPC DIALOG OPTION
 --------------------------------------------------
 
-function interaction.send_dialog_packet(mob, menu_id, option_index, automated, unknown1)
+function interaction.send_dialog_packet(mob, menu_id, option_index, automated, unknown_1, unknown_2)
 
-    if not mob or not menu_id then
-        logger.error('Cannot send dialog packet: invalid dialog state.')
+    if not mob then
         return false
     end
 
-    local info = windower.ffxi.get_info()
+    automated = automated or false
+    unknown_1 = unknown_1 or 0
+    unknown_2 = unknown_2 or 0
 
-    if not info or not info.zone then
-        logger.error('Unable to determine current zone for dialog packet.')
-        return false
-    end
-
-    unknown1 = unknown1 or 0
-
-    local packet = packets.new('outgoing', 0x05B, {
+    packets.inject(packets.new('outgoing', 0x05B, {
         ['Target'] = mob.id,
-        ['Option Index'] = option_index,
-        ['_unknown1'] = unknown1,
         ['Target Index'] = mob.index,
+        ['Option Index'] = option_index,
+        ['_unknown1'] = unknown_1,
+        ['_unknown2'] = unknown_2,
         ['Automated Message'] = automated,
-        ['_unknown2'] = 0,
-        ['Zone'] = info.zone,
+        ['Zone'] = windower.ffxi.get_info().zone,
         ['Menu ID'] = menu_id,
-    })
-
-    packets.inject(packet)
-
-    logger.debug('Dialog packet sent: Option='..tostring(option_index)..' | Menu='..tostring(menu_id)..' | Param='..tostring(unknown1))
+    }))
 
     return true
 end

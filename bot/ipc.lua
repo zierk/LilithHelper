@@ -5,7 +5,7 @@ local ipc = {}
 local discovery_token = nil
 local participants = {}
 
-local START_STAGGER = 0.35
+local START_STAGGER = 1
 local DISCOVERY_TIME = 0.50
 
 

@@ -3,16 +3,75 @@ local logger = require('bot/logger')
 local travel = require('bot/travel')
 local entities = require('bot/entities')
 local packets = require('packets')
+local bit = require('bit')
+
+require('pack')
 
 local interaction = {}
 local last_menu = nil
 
 
 --------------------------------------------------
+-- KI PURCHASE STATE
+--------------------------------------------------
+
+local ki_purchase = {
+    active = false,
+    menu_options = 0,
+    merit_points = 0,
+}
+
+local MAIDEN_OPTION = 23
+local MAIDEN_COST = 10
+local TRISVAIN_MENU_ID = 892
+local NORTHERN_SANDORIA = 231
+
+
+--------------------------------------------------
+-- BIT CHECK
+--------------------------------------------------
+
+local function has_bit(mask, offset)
+    return math.floor(mask / 2^offset) % 2 == 1
+end
+
+
+--------------------------------------------------
+-- INITIATE TRISVAIN
+--------------------------------------------------
+
+local function initiate_trisvain()
+
+    local player = windower.ffxi.get_mob_by_target('me')
+    local trisvain = windower.ffxi.get_mob_by_name('Trisvain')
+
+    if not player or player.status > 0 then
+        return false
+    end
+
+    if not trisvain then
+        return false
+    end
+
+    if math.sqrt(trisvain.distance) >= 6 then
+        return false
+    end
+
+    if not trisvain.valid_target or not trisvain.is_npc or bit.band(trisvain.spawn_type, 0xDF) ~= 2 then
+        return false
+    end
+
+    windower.packets.inject_outgoing(0x01A, 'I2H2d2':pack(0xE1A, trisvain.id, trisvain.index, 0, 0, 0))
+
+    return true
+end
+
+
+--------------------------------------------------
 -- INCOMING NPC MENU TRACKING
 --------------------------------------------------
 
-windower.register_event('incoming chunk', function(id, original, modified)
+windower.register_event('incoming chunk', function(id, original, modified, injected, blocked)
 
     if id ~= 0x032 and id ~= 0x034 then
         return
@@ -20,16 +79,82 @@ windower.register_event('incoming chunk', function(id, original, modified)
 
     local packet = packets.parse('incoming', modified)
 
-    if not packet then
+    if packet then
+        last_menu = {
+            npc = packet['NPC'],
+            npc_index = packet['NPC Index'],
+            zone = packet['Zone'],
+            menu_id = packet['Menu ID'],
+        }
+    end
+
+    --------------------------------------------------
+    -- TRISVAIN KI PURCHASE MENU
+    --------------------------------------------------
+
+    if ki_purchase.active and id == 0x034 then
+
+        local zone_id, menu_id = modified:unpack('H2', 43)
+
+        if zone_id ~= NORTHERN_SANDORIA or menu_id ~= TRISVAIN_MENU_ID then
+            return
+        end
+
+        ki_purchase.menu_options, ki_purchase.merit_points = modified:unpack('I2', 13)
+
+        logger.debug('Trisvain merit points: '..tostring(ki_purchase.merit_points))
+
+        if ki_purchase.merit_points < MAIDEN_COST then
+            logger.info('Fewer than 10 merit points remaining. Farming complete.')
+            ki_purchase.active = false
+            return
+        end
+
+        if not has_bit(ki_purchase.menu_options, MAIDEN_OPTION) then
+            logger.error("Maiden's phantom gem is not currently available.")
+            ki_purchase.active = false
+            return
+        end
+
+        windower.send_command('wait 2;setkey escape;wait .5;setkey escape up;')
+    end
+end)
+
+
+--------------------------------------------------
+-- TRISVAIN KI PURCHASE PACKET
+--------------------------------------------------
+
+windower.register_event('outgoing chunk', function(id, data, modified, injected, blocked)
+
+    if not ki_purchase.active or id ~= 0x05B then
         return
     end
 
-    last_menu = {
-        npc = packet['NPC'],
-        npc_index = packet['NPC Index'],
-        zone = packet['Zone'],
-        menu_id = packet['Menu ID'],
-    }
+    local zone_id, menu_id = data:unpack('H2', 17)
+
+    if zone_id ~= NORTHERN_SANDORIA or menu_id ~= TRISVAIN_MENU_ID then
+        return
+    end
+
+    if data:byte(15) ~= 0 then
+        return
+    end
+
+    if data:unpack('I', 9) == 0x40000000 then
+
+        if ki_purchase.merit_points < MAIDEN_COST then
+            return
+        end
+
+        if not has_bit(ki_purchase.menu_options, MAIDEN_OPTION) then
+            return
+        end
+
+        initiate_trisvain()
+
+        return data:sub(1,8)..string.char(0x02, MAIDEN_OPTION, 0, 0)..data:sub(13)
+    end
 end)
 
 
@@ -60,6 +185,7 @@ function interaction.start_dialog(mob)
     local timeout = os.clock() + 5
 
     while state.running and os.clock() < timeout do
+
         if last_menu and last_menu.menu_id and (last_menu.npc == mob.id or last_menu.npc_index == mob.index) then
             logger.debug('Dialog opened: '..tostring(mob.name)..' | Menu ID: '..tostring(last_menu.menu_id))
             return last_menu.menu_id
@@ -151,31 +277,28 @@ end
 
 function interaction.buy_maidens_phantom_gem()
 
-    logger.debug('Waiting for Trisvain.')
+    logger.debug('Preparing Maiden phantom gem purchase.')
 
-    local trisvain = entities.wait_for_mob_by_name('Trisvain', false)
+    ki_purchase.active = true
+    ki_purchase.menu_options = 0
+    ki_purchase.merit_points = 0
 
-    if not trisvain then
+    if not initiate_trisvain() then
+        ki_purchase.active = false
+        logger.error('Unable to interact with Trisvain.')
         return false
     end
-
-    local menu_id = interaction.start_dialog(trisvain)
-
-    if not menu_id then
-        return false
-    end
-
-    if not interaction.send_dialog_packet(trisvain, menu_id, 259, true) then
-        return false
-    end
-
-    if not interaction.send_dialog_packet(trisvain, menu_id, 5890, false) then
-        return false
-    end
-
-    logger.debug("Maiden's phantom gem purchase packets sent.")
 
     return true
+end
+
+
+--------------------------------------------------
+-- FINISH KI PURCHASE
+--------------------------------------------------
+
+function interaction.finish_key_item_purchase()
+    ki_purchase.active = false
 end
 
 
@@ -259,12 +382,6 @@ function interaction.enter_htmb(difficulty)
         logger.error('Invalid HTMB difficulty: '..tostring(difficulty))
         return false
     end
-
-    coroutine.sleep(1)
-
-    windower.send_command('setkey enter down')
-    coroutine.sleep(0.1)
-    windower.send_command('setkey enter up')
 
     logger.info('HTMB entry request sent.')
 

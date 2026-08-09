@@ -56,4 +56,8 @@ zones.selbina = {
 }
 
 
+zones.lilith_battlefield = {
+    zone_id = 279,
+}
+
 return zones

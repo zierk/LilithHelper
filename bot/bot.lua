@@ -7,7 +7,6 @@ local movement = require('bot/movement')
 local interaction = require('bot/interaction')
 local entities = require('bot/entities')
 local party = require('bot/party')
-local merits = require('bot/merits')
 local settings = require('bot/settings')
 
 local bot = {}
@@ -124,28 +123,6 @@ local function acquire_key_item()
     end
 
     --------------------------------------------------
-    -- CHECK MERIT DATA
-    --------------------------------------------------
-
-    local merit_count = merits.get()
-
-    if merit_count ~= nil then
-
-        logger.debug('Merit Points: '..merit_count..'/'..merits.get_max())
-
-        if merit_count < 10 then
-            logger.info('Fewer than 10 merit points remaining. Farming complete.')
-            bot.stop()
-            return false
-        end
-
-    else
-
-        logger.debug('Merit data not loaded. Attempting KI acquisition anyway.')
-
-    end
-
-    --------------------------------------------------
     -- MOVE TO KI NPC
     --------------------------------------------------
 
@@ -166,7 +143,6 @@ local function acquire_key_item()
     logger.info("Acquiring Maiden's phantom gem.")
 
     if not interaction.buy_maidens_phantom_gem() then
-        logger.error("Failed to purchase Maiden's phantom gem.")
         return false
     end
 
@@ -176,25 +152,28 @@ local function acquire_key_item()
 
     state.phase = 'wait_for_key_item'
 
-    logger.debug("Waiting for Maiden's phantom gem.")
+    local timeout = os.clock() + 15
 
-    while state.running and not keyitems.has_named('maidens_phantom_gem') do
+    while state.running and not keyitems.has_named('maidens_phantom_gem') and os.clock() < timeout do
         coroutine.sleep(0.5)
     end
 
     if not state.running then
+        interaction.finish_key_item_purchase() --clears timeout, no merit points, or other janky issues
         return false
     end
 
+    if not keyitems.has_named('maidens_phantom_gem') then
+        logger.error("Maiden's phantom gem was not acquired.")
+        bot.stop()
+        return false
+    end
+
+    interaction.finish_key_item_purchase()
+
     logger.info("Maiden's phantom gem acquired.")
 
-    state.phase = 'key_item_acquired'
-
-    coroutine.sleep(1)
-
-    return true
 end
-
 
 --------------------------------------------------
 -- NORTHERN SAN D'ORIA -> SELBINA
@@ -627,14 +606,6 @@ function bot.status()
     logger.info('Running: '..tostring(state.running))
     logger.info('Phase: '..tostring(state.phase))
     logger.info('Difficulty: '..settings.get_difficulty())
-
-    local merit_count = merits.get()
-
-    if merit_count == nil then
-        logger.info('Merit Points: Not loaded')
-    else
-        logger.info('Merit Points: '..merit_count..'/'..merits.lp.maximum_merits)
-    end
 end
 
 

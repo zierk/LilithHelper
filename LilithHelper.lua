@@ -22,6 +22,23 @@ windower.register_event('zone change', function(new_id, old_id)
         return
     end
 
+    --------------------------------------------------
+    -- ENTERED LILITH BATTLEFIELD
+    --------------------------------------------------
+
+    if new_id == zones.lilith_battlefield.zone_id then
+
+        state.phase = 'fighting_boss'
+
+        logger.info('Entered Lilith battlefield. Bot waiting for fight to finish.')
+
+        return
+    end
+
+    --------------------------------------------------
+    -- ONLY CARE ABOUT ZONE CHANGES AFTER THE FIGHT
+    --------------------------------------------------
+
     if state.phase ~= 'fighting_boss' then
         return
     end
@@ -30,6 +47,10 @@ windower.register_event('zone change', function(new_id, old_id)
 
         coroutine.sleep(2)
 
+        --------------------------------------------------
+        -- KI SHOULD HAVE BEEN CONSUMED
+        --------------------------------------------------
+
         if keyitems.has_named('maidens_phantom_gem') then
             logger.error("Left HTMB but Maiden's phantom gem is still present.")
             bot.stop()
@@ -37,10 +58,11 @@ windower.register_event('zone change', function(new_id, old_id)
         end
 
         --------------------------------------------------
-        -- NORMAL HTMB RETURN
+        -- NORMAL RETURN TO SELBINA
         --------------------------------------------------
 
         if new_id == zones.selbina.zone_id then
+
             state.phase = 'post_htmb'
 
             logger.info('Returned to Selbina from HTMB. Resuming bot.')
@@ -50,7 +72,8 @@ windower.register_event('zone change', function(new_id, old_id)
         end
 
         --------------------------------------------------
-        -- DEATH / HOME POINT RETURN
+        -- RETURNED SOMEWHERE ELSE
+        -- ASSUME DEATH / HOME POINT RETURN
         --------------------------------------------------
 
         state.phase = 'acquire_key_item'

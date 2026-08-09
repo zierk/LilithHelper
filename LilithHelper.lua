@@ -113,13 +113,13 @@ windower.register_event('addon command', function(command, ...)
         local subcommand = args[1] and args[1]:lower() or ''
 
         if subcommand == 'start' then
-            ipc.start_all()
+            ipc.start_all(bot.start)
 
         elseif subcommand == 'stop' then
-            ipc.stop_all()
+            ipc.stop_all(bot.stop)
 
         elseif subcommand == 'status' then
-            ipc.status_all()
+            ipc.status_all(bot.status)
 
         else
             logger.info('Usage: //lh @all <start|stop|status>')

@@ -58,7 +58,7 @@ end
 -- @ALL START
 --------------------------------------------------
 
-function ipc.start_all()
+function ipc.start_all(local_start)
 
     local player = get_player()
 
@@ -83,28 +83,59 @@ function ipc.start_all()
         coroutine.sleep(DISCOVERY_TIME)
 
         local list = get_sorted_participants()
+        local player = get_player()
 
         logger.info('Found '..#list..' LilithHelper client(s).')
 
         for position, member in ipairs(list) do
+
             local delay = (position - 1) * START_STAGGER
 
-            windower.send_ipc_message(
-                'LH_START '..discovery_token..' '..member.id..' '..string.format('%.2f', delay)
-            )
+            if member.id == player.id then
+
+                --------------------------------------------------
+                -- START INITIATING CLIENT LOCALLY
+                --------------------------------------------------
+
+                coroutine.schedule(function()
+
+                    coroutine.sleep(delay)
+
+                    if local_start then
+                        local_start()
+                    end
+
+                end, 0.1)
+
+            else
+
+                --------------------------------------------------
+                -- START OTHER CLIENTS THROUGH IPC
+                --------------------------------------------------
+
+                windower.send_ipc_message(
+                    'LH_START '..discovery_token..' '..member.id..' '..string.format('%.2f', delay)
+                )
+
+            end
         end
 
         reset_discovery()
 
     end, 0.1)
-end
 
+end
 
 --------------------------------------------------
 -- @ALL STOP
 --------------------------------------------------
 
-function ipc.stop_all()
+function ipc.stop_all(local_stop)
+
+    if local_stop then
+        local_stop()
+    end
+
     windower.send_ipc_message('LH_STOP')
 end
 
@@ -113,7 +144,12 @@ end
 -- @ALL STATUS
 --------------------------------------------------
 
-function ipc.status_all()
+function ipc.status_all(local_status)
+
+    if local_status then
+        local_status()
+    end
+
     windower.send_ipc_message('LH_STATUS')
 end
 

@@ -1,3 +1,5 @@
+local packets = require('packets')
+
 local keyitems = {}
 
 keyitems.ids = {
@@ -5,7 +7,12 @@ keyitems.ids = {
 }
 
 
+--------------------------------------------------
+-- KEY ITEMS
+--------------------------------------------------
+
 function keyitems.has(id)
+
     local player_key_items = windower.ffxi.get_key_items()
 
     if not player_key_items then
@@ -23,6 +30,7 @@ end
 
 
 function keyitems.has_named(name)
+
     local id = keyitems.ids[name]
 
     if not id then
@@ -30,30 +38,6 @@ function keyitems.has_named(name)
     end
 
     return keyitems.has(id)
-end
-
-
-function keyitems.get_merits()
-
-    local player = windower.ffxi.get_player()
-
-    if not player then
-        return nil
-    end
-
-    return player.merits
-end
-
-
-function keyitems.has_enough_merits(amount)
-
-    local merits = keyitems.get_merits()
-
-    if not merits then
-        return false
-    end
-
-    return merits >= amount
 end
 
 

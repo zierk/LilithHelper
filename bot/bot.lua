@@ -7,6 +7,7 @@ local movement = require('bot/movement')
 local interaction = require('bot/interaction')
 local entities = require('bot/entities')
 local party = require('bot/party')
+local merits = require('bot/merits')
 local settings = require('bot/settings')
 
 local bot = {}
@@ -112,11 +113,41 @@ local function acquire_key_item()
 
     local sandy = zones.northern_sandoria
 
+    --------------------------------------------------
+    -- GET TO NORTHERN SAN D'ORIA HP #2
+    --------------------------------------------------
+
     local hp = get_to_northern_sandy_hp()
 
     if not hp or not state.running then
         return false
     end
+
+    --------------------------------------------------
+    -- CHECK MERIT DATA
+    --------------------------------------------------
+
+    local merit_count = merits.get()
+
+    if merit_count ~= nil then
+
+        logger.debug('Merit Points: '..merit_count..'/'..merits.get_max())
+
+        if merit_count < 10 then
+            logger.info('Fewer than 10 merit points remaining. Farming complete.')
+            bot.stop()
+            return false
+        end
+
+    else
+
+        logger.debug('Merit data not loaded. Attempting KI acquisition anyway.')
+
+    end
+
+    --------------------------------------------------
+    -- MOVE TO KI NPC
+    --------------------------------------------------
 
     state.phase = 'move_to_ki_npc'
 
@@ -126,6 +157,10 @@ local function acquire_key_item()
         return false
     end
 
+    --------------------------------------------------
+    -- BUY KI
+    --------------------------------------------------
+
     state.phase = 'buy_key_item'
 
     logger.info("Acquiring Maiden's phantom gem.")
@@ -134,6 +169,10 @@ local function acquire_key_item()
         logger.error("Failed to purchase Maiden's phantom gem.")
         return false
     end
+
+    --------------------------------------------------
+    -- WAIT FOR KI
+    --------------------------------------------------
 
     state.phase = 'wait_for_key_item'
 
@@ -301,8 +340,6 @@ function bot.run()
 
         if not keyitems.has_named('maidens_phantom_gem') then
 
-            logger.debug("Maiden's phantom gem not found.")
-
             --------------------------------------------------
             -- POST HTMB - RETURN CONFLUX -> HOME POINT
             --------------------------------------------------
@@ -350,17 +387,7 @@ function bot.run()
             end
 
             --------------------------------------------------
-            -- CHECK MERITS
-            --------------------------------------------------
-
-            if not keyitems.has_enough_merits(10) then
-                logger.info('Fewer than 10 merit points remaining. Farming complete.')
-                bot.stop()
-                return
-            end
-
-            --------------------------------------------------
-            -- GET NEXT KI
+            -- ACQUIRE KI
             --------------------------------------------------
 
             state.phase = 'acquire_key_item'
@@ -582,9 +609,18 @@ end
 --------------------------------------------------
 
 function bot.status()
+
     logger.info('Running: '..tostring(state.running))
     logger.info('Phase: '..tostring(state.phase))
     logger.info('Difficulty: '..settings.get_difficulty())
+
+    local merit_count = merits.get()
+
+    if merit_count == nil then
+        logger.info('Merit Points: Not loaded')
+    else
+        logger.info('Merit Points: '..merit_count..'/'..merits.lp.maximum_merits)
+    end
 end
 
 

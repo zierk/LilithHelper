@@ -28,9 +28,7 @@ LilithHelper supports both **solo play** and **multi-character parties**, includ
 
 LilithHelper requires:
 
-- Final Fantasy XI
-- Windower 4
-- Windower's standard Lua libraries
+- superwarp addon
 - Access to the Maiden's Phantom Gem HTMB
 - Relevant Home Points unlocked
 
@@ -297,8 +295,8 @@ For example, a character may start:
 - in Northern San d'Oria without the KI;
 - in Northern San d'Oria with the KI;
 - in Selbina with the KI;
-- near the Veridical Conflux;
-- at a configured Home Point;
+- near the Veridical Conflux in Selbina;
+- at any Home Point (within 5 yalms), with or without KI;
 - as a party member waiting for the leader.
 
 The bot determines the character's current state and attempts to continue from the appropriate point in the farming cycle rather than requiring every character to begin from exactly the same location.

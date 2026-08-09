@@ -28,6 +28,59 @@ local NORTHERN_SANDORIA = 231
 
 
 --------------------------------------------------
+-- VERIDICAL CONFLUX
+--------------------------------------------------
+
+local SELBINA = 248
+local VERIDICAL_CONFLUX_INDEX = 126
+local VERIDICAL_CONFLUX_MENU_ID = 10037
+
+local difficulty_options = {
+    VE = {
+        option = 5,
+        unknown_1 = 1,
+        unknown_2 = 0,
+    },
+
+    E = {
+        option = 4,
+        unknown_1 = 1,
+        unknown_2 = 0,
+    },
+
+    N = {
+        option = 49156,
+        unknown_1 = 0,
+        unknown_2 = 0,
+    },
+
+    D = {
+        option = 32772,
+        unknown_1 = 0,
+        unknown_2 = 0,
+    },
+
+    VD = {
+        option = 16388,
+        unknown_1 = 0,
+        unknown_2 = 0,
+    },
+}
+
+
+--------------------------------------------------
+-- CONFLUX ENTRY STATE
+--------------------------------------------------
+
+local conflux_entry = {
+    active = false,
+    difficulty = nil,
+    menu_id = nil,
+    menu_ready = false,
+}
+
+
+--------------------------------------------------
 -- BIT CHECK
 --------------------------------------------------
 
@@ -118,6 +171,27 @@ windower.register_event('incoming chunk', function(id, original, modified, injec
 
         windower.send_command('wait 2;setkey escape;wait .5;setkey escape up;')
     end
+
+
+    --------------------------------------------------
+    -- VERIDICAL CONFLUX MENU
+    --------------------------------------------------
+
+    if conflux_entry.active and id == 0x034 then
+
+        if packet
+            and packet['NPC Index'] == VERIDICAL_CONFLUX_INDEX
+            and packet['Zone'] == SELBINA
+            and packet['Menu ID'] == VERIDICAL_CONFLUX_MENU_ID then
+
+            conflux_entry.menu_id = packet['Menu ID']
+            conflux_entry.menu_ready = true
+
+            logger.debug('Veridical Conflux menu confirmed | Menu ID: '..tostring(packet['Menu ID']))
+        end
+    end
+
+
 end)
 
 
@@ -344,6 +418,13 @@ end
 
 function interaction.enter_htmb(difficulty)
 
+    local option = difficulty_options[difficulty]
+
+    if not option then
+        logger.error('Invalid or unsupported HTMB difficulty: '..tostring(difficulty))
+        return false
+    end
+
     local conflux = entities.wait_for_mob_by_name('Veridical Conflux', false)
 
     if not conflux then
@@ -351,37 +432,49 @@ function interaction.enter_htmb(difficulty)
         return false
     end
 
+    if conflux.index ~= VERIDICAL_CONFLUX_INDEX then
+        logger.error('Unexpected Veridical Conflux index: '..tostring(conflux.index))
+        return false
+    end
+
+    conflux_entry.active = true
+    conflux_entry.difficulty = difficulty
+    conflux_entry.menu_id = nil
+    conflux_entry.menu_ready = false
+
     local menu_id = interaction.start_dialog(conflux)
 
     if not menu_id then
+        conflux_entry.active = false
         logger.error('Unable to open Veridical Conflux menu.')
         return false
     end
 
-    if difficulty == 'VE' then
-        interaction.send_dialog_packet(conflux, menu_id, 16388, true, 1)
-        interaction.send_dialog_packet(conflux, menu_id, 16388, false, 1)
-
-    elseif difficulty == 'E' then
-        interaction.send_dialog_packet(conflux, menu_id, 4, true, 1)
-        interaction.send_dialog_packet(conflux, menu_id, 4, false, 1)
-
-    elseif difficulty == 'N' then
-        interaction.send_dialog_packet(conflux, menu_id, 49156, true)
-        interaction.send_dialog_packet(conflux, menu_id, 49156, false)
-
-    elseif difficulty == 'D' then
-        interaction.send_dialog_packet(conflux, menu_id, 32772, true)
-        interaction.send_dialog_packet(conflux, menu_id, 32772, false)
-
-    elseif difficulty == 'VD' then
-        interaction.send_dialog_packet(conflux, menu_id, 16388, true)
-        interaction.send_dialog_packet(conflux, menu_id, 16388, false)
-
-    else
-        logger.error('Invalid HTMB difficulty: '..tostring(difficulty))
+    if menu_id ~= VERIDICAL_CONFLUX_MENU_ID then
+        conflux_entry.active = false
+        logger.error('Unexpected Veridical Conflux menu ID: '..tostring(menu_id))
         return false
     end
+
+    if not conflux_entry.menu_ready then
+        conflux_entry.active = false
+        logger.error('Veridical Conflux menu was not confirmed.')
+        return false
+    end
+
+    logger.debug('Conflux menu ready | Difficulty: '..difficulty..' | Option: '..option.option)
+
+    if not interaction.send_dialog_packet(conflux, menu_id, option.option, true, option.unknown_1, option.unknown_2) then
+        conflux_entry.active = false
+        return false
+    end
+
+    if not interaction.send_dialog_packet(conflux, menu_id, option.option, false, option.unknown_1, option.unknown_2) then
+        conflux_entry.active = false
+        return false
+    end
+
+    conflux_entry.active = false
 
     logger.info('HTMB entry request sent.')
 

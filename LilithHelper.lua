@@ -194,3 +194,52 @@ windower.register_event('addon command', function(command, ...)
 
     end
 end)
+
+
+--- DELETE ME AFTER DEV
+local packets = require('packets')
+
+windower.register_event('incoming chunk', function(id, original, modified, injected, blocked)
+
+    if id ~= 0x034 then
+        return
+    end
+
+    local packet = packets.parse('incoming', modified)
+
+    if not packet then
+        return
+    end
+
+    windower.add_to_chat(207,
+        'IN 0x034 | NPC='..tostring(packet['NPC'])..
+        ' | Index='..tostring(packet['NPC Index'])..
+        ' | Zone='..tostring(packet['Zone'])..
+        ' | Menu='..tostring(packet['Menu ID'])
+    )
+end)
+
+
+windower.register_event('outgoing chunk', function(id, original, modified, injected, blocked)
+
+    if id ~= 0x05B then
+        return
+    end
+
+    local packet = packets.parse('outgoing', original)
+
+    if not packet then
+        return
+    end
+
+    windower.add_to_chat(207,
+        'OUT 0x05B | Target='..tostring(packet['Target'])..
+        ' | Index='..tostring(packet['Target Index'])..
+        ' | Option='..tostring(packet['Option Index'])..
+        ' | Unknown1='..tostring(packet['_unknown1'])..
+        ' | Unknown2='..tostring(packet['_unknown2'])..
+        ' | Auto='..tostring(packet['Automated Message'])..
+        ' | Zone='..tostring(packet['Zone'])..
+        ' | Menu='..tostring(packet['Menu ID'])
+    )
+end)

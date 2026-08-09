@@ -446,13 +446,15 @@ function bot.run()
                     return
                 end
 
-                logger.info('All party members are present.')
-                logger.debug('Waiting 10 seconds for party members to finish loading.')
+                if not party.is_solo() then
+                    logger.info('All party members are present.')
+                    logger.debug('Waiting 10 seconds for party members to finish loading.')
 
-                coroutine.sleep(10)
+                    coroutine.sleep(10)
 
-                if not state.running then
-                    return
+                    if not state.running then
+                        return
+                    end
                 end
 
                 state.phase = 'at_conflux'

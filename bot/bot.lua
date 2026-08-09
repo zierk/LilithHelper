@@ -173,6 +173,10 @@ local function acquire_key_item()
 
     logger.info("Maiden's phantom gem acquired.")
 
+    coroutine.sleep(1)
+
+    return true
+
 end
 
 --------------------------------------------------

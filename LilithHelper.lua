@@ -12,6 +12,14 @@ local zones = require('bot/zones')
 local settings = require('bot/settings')
 
 
+windower.register_event('load', function()
+
+    windower.add_to_chat(167, '[LilithHelper] IMPORTANT: Superwarp must be loaded before starting the bot.')
+    windower.add_to_chat(167, '[LilithHelper] Use //lua load superwarp if it is not already loaded.')
+
+end)
+
+
 --------------------------------------------------
 -- ZONE CHANGE
 --------------------------------------------------

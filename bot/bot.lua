@@ -463,9 +463,16 @@ function bot.run()
                     return
                 end
 
-                state.phase = 'at_conflux'
+                logger.info('All party members are present.')
+                logger.debug('Waiting 3 seconds for party members to finish loading.')
 
-                logger.info('Party ready. Ready to enter HTMB.')
+                coroutine.sleep(3)
+
+                if not state.running then
+                    return
+                end
+
+                state.phase = 'at_conflux'
 
                 if not enter_htmb() then
                     return
@@ -518,9 +525,16 @@ function bot.run()
                 return
             end
 
-            state.phase = 'at_conflux'
+            logger.info('All party members are present.')
+            logger.debug('Waiting 3 seconds for party members to finish loading.')
 
-            logger.info('Party ready. Ready to enter HTMB.')
+            coroutine.sleep(3)
+
+            if not state.running then
+                return
+            end
+            
+            state.phase = 'at_conflux'
 
             if not enter_htmb() then
                 return

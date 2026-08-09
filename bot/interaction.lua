@@ -270,6 +270,12 @@ function interaction.enter_htmb(difficulty)
         return false
     end
 
+    coroutine.sleep(1)
+
+    windower.send_command('setkey enter down')
+    coroutine.sleep(0.1)
+    windower.send_command('setkey enter up')
+
     logger.info('HTMB entry request sent.')
 
     return true

@@ -1,6 +1,6 @@
 local state = {
     running = false,
-    debug = true,
+    debug = false,
 
     phase = 'idle',
 

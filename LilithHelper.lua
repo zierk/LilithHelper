@@ -37,7 +37,7 @@ windower.register_event('zone change', function(new_id, old_id)
                 return
             end
 
-            local timeout = os.clock() + 10
+            local timeout = os.clock() + 20
 
             while state.running and os.clock() < timeout do
 

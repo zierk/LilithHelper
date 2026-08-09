@@ -236,25 +236,14 @@ local function northern_sandy_to_selbina()
     end
 
     --------------------------------------------------
-    -- ONLY NOW ATTEMPT SELBINA WARP
+    -- SUPERWARP TO SELBINA
     --------------------------------------------------
 
     state.phase = 'warp_selbina'
 
     logger.info('Warping to Selbina.')
 
-    local starting_zone = travel.get_zone_id()
-
-    if not interaction.warp_northern_sandy_to_selbina() then
-        logger.error('Failed to initiate Selbina warp.')
-        return false
-    end
-
-    local new_zone = travel.wait_for_zone_change(starting_zone)
-
-    if not new_zone then
-        return false
-    end
+    travel.warp_homepoint(selbina.name, 1)
 
     local selbina_hp = interaction.wait_for_homepoint(selbina, 1)
 

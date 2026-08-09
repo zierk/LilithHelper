@@ -69,18 +69,6 @@ local difficulty_options = {
 
 
 --------------------------------------------------
--- CONFLUX ENTRY STATE
---------------------------------------------------
-
-local conflux_entry = {
-    active = false,
-    difficulty = nil,
-    menu_id = nil,
-    menu_ready = false,
-}
-
-
---------------------------------------------------
 -- BIT CHECK
 --------------------------------------------------
 
@@ -171,26 +159,6 @@ windower.register_event('incoming chunk', function(id, original, modified, injec
 
         windower.send_command('wait 2;setkey escape;wait .5;setkey escape up;')
     end
-
-
-    --------------------------------------------------
-    -- VERIDICAL CONFLUX MENU
-    --------------------------------------------------
-
-    if conflux_entry.active and id == 0x034 then
-
-        if packet
-            and packet['NPC Index'] == VERIDICAL_CONFLUX_INDEX
-            and packet['Zone'] == SELBINA
-            and packet['Menu ID'] == VERIDICAL_CONFLUX_MENU_ID then
-
-            conflux_entry.menu_id = packet['Menu ID']
-            conflux_entry.menu_ready = true
-
-            logger.debug('Veridical Conflux menu confirmed | Menu ID: '..tostring(packet['Menu ID']))
-        end
-    end
-
 
 end)
 
@@ -437,44 +405,43 @@ function interaction.enter_htmb(difficulty)
         return false
     end
 
-    conflux_entry.active = true
-    conflux_entry.difficulty = difficulty
-    conflux_entry.menu_id = nil
-    conflux_entry.menu_ready = false
+    --------------------------------------------------
+    -- OPEN REAL CONFLUX MENU
+    --------------------------------------------------
 
     local menu_id = interaction.start_dialog(conflux)
 
     if not menu_id then
-        conflux_entry.active = false
         logger.error('Unable to open Veridical Conflux menu.')
         return false
     end
 
     if menu_id ~= VERIDICAL_CONFLUX_MENU_ID then
-        conflux_entry.active = false
         logger.error('Unexpected Veridical Conflux menu ID: '..tostring(menu_id))
         return false
     end
 
-    if not conflux_entry.menu_ready then
-        conflux_entry.active = false
-        logger.error('Veridical Conflux menu was not confirmed.')
-        return false
-    end
+    logger.debug(
+        'Conflux menu confirmed | Menu ID: '..menu_id..
+        ' | Difficulty: '..difficulty..
+        ' | Option: '..option.option
+    )
 
-    logger.debug('Conflux menu ready | Difficulty: '..difficulty..' | Option: '..option.option)
+    --------------------------------------------------
+    -- SEND VERIFIED DIFFICULTY PACKETS
+    --------------------------------------------------
 
     if not interaction.send_dialog_packet(conflux, menu_id, option.option, true, option.unknown_1, option.unknown_2) then
-        conflux_entry.active = false
+        logger.error('Failed to send HTMB automated selection packet.')
         return false
     end
+
+    coroutine.sleep(0.1)
 
     if not interaction.send_dialog_packet(conflux, menu_id, option.option, false, option.unknown_1, option.unknown_2) then
-        conflux_entry.active = false
+        logger.error('Failed to send HTMB confirmation packet.')
         return false
     end
-
-    conflux_entry.active = false
 
     logger.info('HTMB entry request sent.')
 

@@ -23,7 +23,7 @@ windower.register_event('zone change', function(new_id, old_id)
     end
 
     --------------------------------------------------
-    -- ENTERED LILITH BATTLEFIELD
+    -- ENTERING LILITH BATTLEFIELD
     --------------------------------------------------
 
     if new_id == zones.lilith_battlefield.zone_id then
@@ -36,24 +36,24 @@ windower.register_event('zone change', function(new_id, old_id)
     end
 
     --------------------------------------------------
-    -- ONLY CARE ABOUT ZONE CHANGES AFTER THE FIGHT
+    -- IGNORE ALL OTHER ZONE CHANGES UNLESS
+    -- WE ARE ACTUALLY LEAVING THE BATTLEFIELD
     --------------------------------------------------
 
-    if state.phase ~= 'fighting_boss' then
+    if old_id ~= zones.lilith_battlefield.zone_id then
         return
     end
 
+    --------------------------------------------------
+    -- LEAVING LILITH BATTLEFIELD
+    --------------------------------------------------
+
     coroutine.schedule(function()
 
+        -- Allow zoning and KI state to fully update.
         coroutine.sleep(2)
 
-        --------------------------------------------------
-        -- KI SHOULD HAVE BEEN CONSUMED
-        --------------------------------------------------
-
-        if keyitems.has_named('maidens_phantom_gem') then
-            logger.error("Left HTMB but Maiden's phantom gem is still present.")
-            bot.stop()
+        if not state.running then
             return
         end
 
@@ -62,6 +62,12 @@ windower.register_event('zone change', function(new_id, old_id)
         --------------------------------------------------
 
         if new_id == zones.selbina.zone_id then
+
+            if keyitems.has_named('maidens_phantom_gem') then
+                logger.error("Returned from HTMB but Maiden's phantom gem is still present.")
+                bot.stop()
+                return
+            end
 
             state.phase = 'post_htmb'
 
@@ -72,9 +78,14 @@ windower.register_event('zone change', function(new_id, old_id)
         end
 
         --------------------------------------------------
-        -- RETURNED SOMEWHERE ELSE
-        -- ASSUME DEATH / HOME POINT RETURN
+        -- DEATH / HOME POINT RETURN
         --------------------------------------------------
+
+        if keyitems.has_named('maidens_phantom_gem') then
+            logger.error("Left HTMB but Maiden's phantom gem is still present.")
+            bot.stop()
+            return
+        end
 
         state.phase = 'acquire_key_item'
 
